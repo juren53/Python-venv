@@ -66,6 +66,33 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 This file is in the repo but the README never references it. Either add a "Further reading" link at the bottom of the README or remove the file if it is considered redundant with the README content.
 
+### 11. External config file instead of editing the script header
+
+**Current design:** users copy `run.ps1` or `run.sh` into their project and edit the `# --- CONFIGURATION ---` block at the top.
+
+**Alternative:** scripts remain static and read configuration from a `venv.conf` file in the project root:
+
+```ini
+APP_NAME=My App
+ENTRY_POINT=app.py
+VENV_DIR=venv
+REQUIREMENTS=requirements.txt
+```
+
+**Advantages:**
+- Scripts are never modified — upgrading is as simple as overwriting the script file; config survives
+- Cleaner separation between launcher logic and project-specific settings
+- Scripts can be installed system-wide or in a shared tools directory and called from any project
+- `git diff` on the script file is always clean; only `venv.conf` carries project changes
+
+**Disadvantages:**
+- Users must understand two files instead of one
+- Config parsing in bash without `source`-ing (which allows arbitrary code execution) requires careful key=value parsing
+- Discoverability drops — the current design puts config at the top of the script where it is immediately visible
+- One extra step vs. the current "copy and edit three lines" workflow
+
+**Recommended middle ground:** scripts look for `venv.conf` first and fall back to built-in defaults (`app.py`, `venv/`, `requirements.txt`). If no config file is found, the script runs with defaults and prints a one-time hint that `venv.conf` can be created for customization. Users with a standard project layout need to do nothing; users who need customization create `venv.conf`.
+
 ---
 
 ## Low-Impact / Nice to Have
@@ -94,3 +121,4 @@ A small `example/` directory containing a minimal `hello.py` and `requirements.t
 | 8 | Link reference guide from README | Medium |
 | 9 | `--verbose` flag | Low |
 | 10 | Example project | Low |
+| 11 | External `venv.conf` config file | Medium |
